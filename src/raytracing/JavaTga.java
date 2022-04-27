@@ -5,7 +5,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.util.ArrayList;
 
 /**
  *
@@ -13,7 +12,7 @@ import java.util.ArrayList;
  */
 public class JavaTga
 {
-    
+    private static Scene scene;
     /**
      * 
      * @param fout : output file stream
@@ -65,11 +64,9 @@ public class JavaTga
      * @param args no command line arguments
      */
     public static void main(String[] args) {
-        ArrayList<InterfaceRay> objs = new ArrayList<>();
-        ArrayList<Light> lights = new ArrayList<>();
         
-        objs = createObjs();
-        lights = createLight();
+        
+        scene = new Scene(Integer.parseInt(args[0]));
         
         
         int w=1024;
@@ -79,18 +76,18 @@ public class JavaTga
         for(int row = 0; row < h; row++){ // for each row of the image
             for(int col = 0; col < w; col++){ // for each column of the image
       
-                float x = (col-w/2)*2;
-                float y = (row-h/2)*2;
-                float z = -1;
+                double x = (col - w / 2.0D) / h;
+                double y = (row - h / 2.0D) / h;
+                double z = 0.8;
                 
-                float[] color = findColor(new Vec3f(0,0,0),new Vec3f(x,y,z),objs,lights);
+                Color color = findColor(new Vec3d(0,0,0),new Vec3d(x,y,z).mult(-1),2);
                 
                 int index = 3*((row*w)+col); // compute index of color for pixel (x,y) in the buffer
                                
                 // Depending on the x position, select a color... 
-                buffer[index]=(byte)color[2]; // Blue in the left part of the image
-                buffer[index+1]=(byte)color[1]; // Green in the middle
-                buffer[index+2]=(byte)color[0]; // Red in the right part
+                buffer[index]=(byte)(color.getBlue()); // Blue in the left part of the image
+                buffer[index+1]=(byte)(color.getGreen()); // Green in the middle
+                buffer[index+2]=(byte)(color.getRed()); // Red in the right part
             }
         }
         try {
@@ -102,85 +99,114 @@ public class JavaTga
         }
     }
     
-    public static ArrayList<Light> createLight(){
-        ArrayList<Light> lights = new ArrayList<>(); 
-        
-        lights.add(new Light(new Vec3f(0,0,0), new float[]{0.5f,1f,0.5f}));
-        
-        return lights;
-    }
     
-    public static ArrayList<InterfaceRay> createObjs(){
-        ArrayList<InterfaceRay> objs = new ArrayList<>(); 
+    
+    public static void createObjs(){ 
+
         
-        Plan gauche = new Plan(new Vec3f(1,0,0),400,new float[]{255,0,0});
+        /*
+        Plan gauche = new Plan(new Vec3d(1,0,0),10,Color.RED,Color.WHITE,20,0.1,0,1);
         
-        Plan droite = new Plan(new Vec3f(-1,0,0),400,new float[]{0,0,255});
+        Plan droite = new Plan(new Vec3d(-1,0,0),10,Color.BLUE,Color.WHITE,20,0.1,0,1);
         
-        Plan haut = new Plan(new Vec3f(0,-1,0),400,new float[]{255,255,255});
+        Plan bas = new Plan(new Vec3d(0,-1,0),2d,Color.WHITE,Color.WHITE,20,0,0.1,1);
         
-        Plan bas = new Plan(new Vec3f(0,1,0),400,new float[]{0,255,0});
+        Plan haut = new Plan(new Vec3d(0,1,0),2d,Color.GREEN,Color.WHITE,20,0,0.1,1);
         
-        Plan millieu = new Plan(new Vec3f(0,0,1),2,new float[]{120,50,10});
+        Plan millieu = new Plan(new Vec3d(0,0,1),10,Color.YELLOW,Color.WHITE,20,0.1,0,1);
+        
+        Sphere s = new Sphere(new Vec3d(-2.0D,0.0D, -4.0D), 0.5D, Color.CYAN, Color.WHITE,10,0.75,0);
+        Sphere s1 = new Sphere(new Vec3d(2.0D,0.0D, -4.0D), 0.5D, Color.MAGENTA, Color.WHITE,100,0.75,0);
         
         objs.add(droite);
         objs.add(gauche);
         objs.add(haut);
         objs.add(bas);
         objs.add(millieu);
-        
-        return objs;
+        objs.add(s);
+        objs.add(s1);
+        */
     }
     
-    public static float[] findColor(Vec3f posView,Vec3f posPixel,ArrayList<InterfaceRay> objs,ArrayList<Light> lights){
+    public static Color findColor(Vec3d p,Vec3d v,int nbRay){
+        if (nbRay <= 0)
+            return Color.AMBIENT_LIGHT;
         
-        float[] color = new float[]{0,0,0};
-        
-        float lambdaMin = Float.MAX_VALUE;
+        double lambdaMin = Double.MAX_VALUE;
         InterfaceRay objMin = null;
 
-        for(InterfaceRay f : objs){
-            float lambda = f.getIntersection(posView, posPixel);
+        for(InterfaceRay f : scene.objs){
+            double lambda = f.getIntersection(p, v);
 
-            if(lambda < lambdaMin && lambda>0){
+            if(lambda>0.0d && lambda < lambdaMin){
                 lambdaMin = lambda;
                 objMin = f;
             }
         }
         
-        if(objMin!=null){
-            //posView + lambdaMin*posPixel
-            Vec3f I = new Vec3f(posView).add(new Vec3f(posPixel).scale(lambdaMin));
-            Vec3f n = objMin.getNormal(I);
-            //ambiant Light
-            color[0] += objMin.color[0]*0.1f;
-            color[1] += objMin.color[1]*0.1f;
-            color[2] += objMin.color[2]*0.1f;
+        if(objMin==null)
+            return Color.AMBIENT_LIGHT;
+
+        
+        //I = p + lambda * v
+        Vec3d I = objMin.getIntersectionPoint(p, v, lambdaMin);
+        Vec3d n = objMin.getNormal(I);
+        
+        boolean inside = n.dotProduct(v) > 0.0D;
+        if (inside)
+            n = n.mult(-1);
+        
+        Color color = objMin.getColor(I).mult(Color.AMBIENT_LIGHT);
+
+        for(Light l : scene.lights){
+            Vec3d IS = l.getPosition().sub(I);
             
-            for(Light l : lights){
-                boolean vis = true;
-                float lambdaObj;
-                Vec3f IS = new Vec3f(l.pos).sub(I);
-                for(InterfaceRay f : objs){
-                    lambdaObj = f.getIntersection(I, IS);
-                    if(lambdaObj>0 && lambdaObj<1){
-                        vis = false;
-                    }
+            boolean vis = true;
+            
+            for(InterfaceRay f : scene.objs){
+                double lambdaObj = f.getIntersection(I, IS);
+                if(0.0D < lambdaObj && lambdaObj < 1.0D){
+                    //System.out.println("NON LIGHT");
+                    vis = false;
                 }
-                if(vis){
-                    float weight = Math.max(n.dotProduct(IS), 0.0f);
-                    float[] diffuse = new float[]{weight*l.colorLight[0],
-                                                  weight*l.colorLight[1],
-                                                  weight*l.colorLight[2]
-                                                 };
-                    color[0] += diffuse[0];
-                    color[1] += diffuse[1];
-                    color[2] += diffuse[2];
+            }
+            if(vis){
+                n.normalize();
+                IS.normalize();
+                v.normalize();
+
+                double weight = Math.max(n.dotProduct(IS), 0.0f);
+
+                Color diffuse = l.getDiffuse().mult(objMin.color).mult(weight);
+
+                //Vec3d halfwayDir = IS.sub(n); // direction
+                
+                Vec3d halfwayDir = IS.sub(n.mult(2.0D * weight)); // direction
+                Color specular = l.getSpecular().mult(objMin.getSpecularColor())
+                        .mult(Math.pow(Math.max(halfwayDir.dotProduct(v), 0.0d), objMin.getShininess())); 
+                  
+                  
+                color = color.add(diffuse).add(specular);
+                
+                if (objMin.getReflectionCoeff() > 0.0D) {
+                    Vec3d r = v.sub(n.mult(2.0D * n.dotProduct(v))); // r = v - 2 * nIDotV * nI
+                    r.normalize(); // r / ||r||
+                    color = color.add(findColor(I, r,nbRay - 1).mult(objMin.getReflectionCoeff()));
+                }
+
+                if (objMin.getTransmissionCoeff() > 0.0D) {
+                    double eta = inside ? objMin.getRefractionIndex() : 1.0D / objMin.getRefractionIndex();
+                    double c1 = -n.dotProduct(v); // c1 = nI . v
+                    double c2 = Math.sqrt(1.0D - eta * eta * (1.0D - c1 * c1)); // c2 = sqrt(1 - eta^2 * (1 - c1^2))
+                    Vec3d t = v.mult(eta).add(n.mult(eta * c1 - c2)); // t = eta * v + (eta * c1 - c2) * nI
+                    t.normalize(); // t / ||t||
+                    color = color.add(findColor(I, t, nbRay - 1).mult(objMin.getTransmissionCoeff()));
                 }
             }
         }
         
         return color;
     }
+
 }
 

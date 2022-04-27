@@ -1,24 +1,18 @@
 package raytracing;
 
-/**
- * Basic class to represent 3-vectors
- * Not intended to be a complete algebra class !
- * Methods are studied to avoid allocation of new objects, this explains some weird choices...
- * @author Philippe Meseure
- * @version 1.0
- */
-public class Vec3f
+
+public class Vec3d
 {
 	/**
 	 * x, y and z values of the current vector.
 	 * These are public to allow fast access and simple use.
 	 */
-	public float x,y,z;
+	public double x,y,z;
 
 	/**
 	 * Default Constructor
 	 */
-	public Vec3f()
+	public Vec3d()
 	{
 		this.x=this.y=this.z=0.F;
 	}
@@ -27,7 +21,7 @@ public class Vec3f
 	 * Constructor with initialisation
 	 * @param x,y,z values to place into current vector
 	 */
-	public Vec3f(final float x,final float y,final float z)
+	public Vec3d(final double x,final double y,final double z)
 	{
 		this.x=x;
 		this.y=y;
@@ -38,7 +32,7 @@ public class Vec3f
 	 * Constructor by copy
 	 * @param that vector to be copied in current vector
 	 */
-	public Vec3f(final Vec3f that)
+	public Vec3d(final Vec3d that)
 	{
 		this.x=that.x;
 		this.y=that.y;
@@ -49,7 +43,7 @@ public class Vec3f
 	 * Set current vector's value to 0.0
 	 * @return current vector
 	 */
-	public Vec3f reset()
+	public Vec3d reset()
 	{
 		this.x=this.y=this.z=0.F;
 		return this;
@@ -60,7 +54,7 @@ public class Vec3f
 	 * @param that vector to be copied
 	 * @return current vector
 	 */
-	public Vec3f set(final Vec3f that)
+	public Vec3d set(final Vec3d that)
 	{
 		this.x=that.x;
 		this.y=that.y;
@@ -73,7 +67,7 @@ public class Vec3f
 	 * @param x,y,z values to place into current vector
 	 * @return current vector
 	 */
-	public Vec3f set(final float x,final float y,final float z)
+	public Vec3d set(final double x,final double y,final double z)
 	{
 		this.x=x;
 		this.y=y;
@@ -84,27 +78,27 @@ public class Vec3f
 	/**
 	 * @return square of the length of current vector
 	 */
-	public float lengthSquare()
+	public double lengthSquare()
 	{
 			return this.x*this.x+this.y*this.y+this.z*this.z;
 	}
 	/**
 	 * @return length of current vector
 	 */
-	public float length()
+	public double length()
 	{
-			return (float)Math.sqrt(this.x*this.x+this.y*this.y+this.z*this.z);
+			return (double)Math.sqrt(this.x*this.x+this.y*this.y+this.z*this.z);
 	}
 
 	/**
 	 * Normalize current vector
 	 * @return current vector
 	 */
-	public Vec3f normalize()
+	public Vec3d normalize()
 	{
-		float l=this.lengthSquare();
+		double l=this.lengthSquare();
 		if (l==0.F) return this;
-		l=(float)Math.sqrt(l);
+		l=(double)Math.sqrt(l);
 		return this.scale(1.F/l);
 	}
 
@@ -113,7 +107,7 @@ public class Vec3f
 	 * @param that any vector
 	 * @return current vector
 	 */
-	public Vec3f add(final Vec3f that)
+	public Vec3d add(final Vec3d that)
 	{
 		this.x+=that.x;
 		this.y+=that.y;
@@ -127,7 +121,7 @@ public class Vec3f
 	 * @param v2 any vector
 	 * @return current vector
 	 */
-	public Vec3f setAdd(final Vec3f v1, final Vec3f v2)
+	public Vec3d setAdd(final Vec3d v1, final Vec3d v2)
 	{
 		this.x=v1.x+v2.x;
 		this.y=v1.y+v2.y;
@@ -140,12 +134,9 @@ public class Vec3f
 	 * @param that vector to subtract
 	 * @return current vector
 	 */
-	public Vec3f sub(final Vec3f that)
+	public Vec3d sub(final Vec3d that)
 	{
-		this.x-=that.x;
-		this.y-=that.y;
-		this.z-=that.z;
-		return this;
+		return new Vec3d(this.x - that.x, this.y - that.y, this.z - that.z);
 	}
 
 	/**
@@ -154,7 +145,7 @@ public class Vec3f
 	 * @param v2 any vector
 	 * @return
 	 */
-	public Vec3f setSub(final Vec3f v1,final Vec3f v2)
+	public Vec3d setSub(final Vec3d v1,final Vec3d v2)
 	{
 		this.x=v1.x-v2.x;
 		this.y=v1.y-v2.y;
@@ -167,12 +158,22 @@ public class Vec3f
 	 * @param scale uniform scale factor
 	 * @return current vector
 	 */
-	public Vec3f scale(final float scale)
+	public Vec3d scale(final double scale)
 	{
 		this.x*=scale;
 		this.y*=scale;
 		this.z*=scale;
 		return this;
+	}
+        
+        /**
+	 * Multiply this vector by a scalar.
+	 * 
+	 * @param s the scalar
+	 * @return the result of the multiplication
+	 */
+	public Vec3d mult(double s) {
+		return new Vec3d(this.x * s, this.y * s, this.z * s);
 	}
 
 	/**
@@ -182,7 +183,7 @@ public class Vec3f
 	 * @param scalez scale factor for z
 	 * @return current vector
 	 */
-	public Vec3f scale(final float scalex,final float scaley,final float scalez)
+	public Vec3d scale(final double scalex,final double scaley,final double scalez)
 	{
 		this.x*=scalex;
 		this.y*=scaley;
@@ -196,7 +197,7 @@ public class Vec3f
 	 * @param that vector to scale
 	 * @return current vector
 	 */
-	public Vec3f setScale(final float scale,final Vec3f that)
+	public Vec3d setScale(final double scale,final Vec3d that)
 	{
 		this.x=scale*that.x;
 		this.y=scale*that.y;
@@ -210,7 +211,7 @@ public class Vec3f
 	 * @param v2 scale factors for x, y and z
 	 * @return current vector
 	 */
-	public Vec3f setScale(final Vec3f v1,final Vec3f v2)
+	public Vec3d setScale(final Vec3d v1,final Vec3d v2)
 	{
 		this.x=v1.x*v2.x;
 		this.y=v1.y*v2.y;
@@ -224,7 +225,7 @@ public class Vec3f
 	 * @param that vector to scale and add to current vector
 	 * @return current vector
 	 */
-	public Vec3f addScale(final float scale,final Vec3f that)
+	public Vec3d addScale(final double scale,final Vec3d that)
 	{
 		this.x+=scale*that.x;
 		this.y+=scale*that.y;
@@ -238,7 +239,7 @@ public class Vec3f
 	 * @param v any vector
 	 * @return current vector
 	 */
-	public Vec3f setMatMultiply(final float[] mat,final Vec3f v)
+	public Vec3d setMatMultiply(final double[] mat,final Vec3d v)
 	{
 		this.x=mat[0]*v.x+mat[1]*v.y+mat[2]*v.z;
 		this.y=mat[3]*v.x+mat[4]*v.y+mat[5]*v.z;
@@ -252,7 +253,7 @@ public class Vec3f
 	 * @param v any vector
 	 * @return current vector
 	 */
-	public Vec3f setTransposeMatMultiply(final float[] mat,final Vec3f v)
+	public Vec3d setTransposeMatMultiply(final double[] mat,final Vec3d v)
 	{
 		this.x=mat[0]*v.x+mat[3]*v.y+mat[6]*v.z;
 		this.y=mat[1]*v.x+mat[4]*v.y+mat[7]*v.z;
@@ -265,7 +266,7 @@ public class Vec3f
 	 * @param v vector with which dotproduct is computed
 	 * @return result of dot product
 	 */
-	public float dotProduct(final Vec3f v)
+	public double dotProduct(final Vec3d v)
 	{
 		return this.x*v.x+this.y*v.y+this.z*v.z;
 	}
@@ -277,7 +278,7 @@ public class Vec3f
 	 * @param v2 Second vector
 	 * @return current vector, filled with cross product v1*v2
 	 */
-	public Vec3f setCrossProduct(final Vec3f v1,final Vec3f v2)
+	public Vec3d setCrossProduct(final Vec3d v1,final Vec3d v2)
 	{
 		this.x=v1.y*v2.z-v1.z*v2.y;
 		this.y=v1.z*v2.x-v1.x*v2.z; // take care of this value !!

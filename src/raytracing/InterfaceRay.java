@@ -11,12 +11,45 @@ package raytracing;
  */
 public abstract class InterfaceRay {
     
-    protected Vec3f normal;
-    protected float dist;
-    protected float[] color;
+    protected Color color;
+    protected Color colorSpecular;
     
-    public abstract float getIntersection(Vec3f p, Vec3f v);
+    protected double shininess;
+    
+    protected double coeffReflection;
+    protected double coeffTransmission;
+    protected double indexRefraction;
+    
+    public abstract double getIntersection(Vec3d p, Vec3d v);
 
-    public abstract Vec3f getNormal(Vec3f pos);
+    public abstract Vec3d getNormal(Vec3d I);
+    
+    public Vec3d getIntersectionPoint(Vec3d P, Vec3d v, double lambdaI) {
+        return P.add(v.mult(lambdaI));
+    }
+    
+    public Color getColor(Vec3d I) {
+        return color;
+    }
+
+    public Color getSpecularColor() {
+        return colorSpecular;
+    }
+
+    public double getShininess() {
+        return shininess;
+    }
+    
+    public double getReflectionCoeff() {
+        return coeffReflection;
+    }
+
+    public double getTransmissionCoeff() {
+        return coeffTransmission;
+    }
+    
+    public double getRefractionIndex() {
+        return indexRefraction;
+    }
     
 }
