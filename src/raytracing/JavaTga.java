@@ -64,9 +64,21 @@ public class JavaTga
      * @param args no command line arguments
      */
     public static void main(String[] args) {
+        int nbRec = 1;
         
+        if(args.length>=1){
+            scene = new Scene(Integer.parseInt(args[0]));
+        }else{
+            System.err.println("manque des arguments");
+            return;
+        }
         
-        scene = new Scene(Integer.parseInt(args[0]));
+        if(args.length >= 2){
+            nbRec = Integer.parseInt(args[1]);
+        }
+        
+
+        
         
         
         int w=1024;
@@ -78,9 +90,9 @@ public class JavaTga
       
                 double x = (col - w / 2.0D) / h;
                 double y = (row - h / 2.0D) / h;
-                double z = 0.8;
+                double z = -0.8;
                 
-                Color color = findColor(new Vec3d(0,0,0),new Vec3d(x,y,z).mult(-1),2);
+                Color color = findColor(new Vec3d(0,0,0),new Vec3d(x,y,z),nbRec);
                 
                 int index = 3*((row*w)+col); // compute index of color for pixel (x,y) in the buffer
                                
@@ -91,7 +103,7 @@ public class JavaTga
             }
         }
         try {
-            saveTGA("imagetest.tga",buffer,w,h);
+            saveTGA("image.tga",buffer,w,h);
         }
         catch(Exception e)
         {
@@ -99,37 +111,8 @@ public class JavaTga
         }
     }
     
-    
-    
-    public static void createObjs(){ 
-
-        
-        /*
-        Plan gauche = new Plan(new Vec3d(1,0,0),10,Color.RED,Color.WHITE,20,0.1,0,1);
-        
-        Plan droite = new Plan(new Vec3d(-1,0,0),10,Color.BLUE,Color.WHITE,20,0.1,0,1);
-        
-        Plan bas = new Plan(new Vec3d(0,-1,0),2d,Color.WHITE,Color.WHITE,20,0,0.1,1);
-        
-        Plan haut = new Plan(new Vec3d(0,1,0),2d,Color.GREEN,Color.WHITE,20,0,0.1,1);
-        
-        Plan millieu = new Plan(new Vec3d(0,0,1),10,Color.YELLOW,Color.WHITE,20,0.1,0,1);
-        
-        Sphere s = new Sphere(new Vec3d(-2.0D,0.0D, -4.0D), 0.5D, Color.CYAN, Color.WHITE,10,0.75,0);
-        Sphere s1 = new Sphere(new Vec3d(2.0D,0.0D, -4.0D), 0.5D, Color.MAGENTA, Color.WHITE,100,0.75,0);
-        
-        objs.add(droite);
-        objs.add(gauche);
-        objs.add(haut);
-        objs.add(bas);
-        objs.add(millieu);
-        objs.add(s);
-        objs.add(s1);
-        */
-    }
-    
-    public static Color findColor(Vec3d p,Vec3d v,int nbRay){
-        if (nbRay <= 0)
+    public static Color findColor(Vec3d p,Vec3d v,int nbRec){
+        if (nbRec <= 0)
             return Color.AMBIENT_LIGHT;
         
         double lambdaMin = Double.MAX_VALUE;
@@ -182,27 +165,26 @@ public class JavaTga
                 //Vec3d halfwayDir = IS.sub(n); // direction
                 
                 Vec3d halfwayDir = IS.sub(n.mult(2.0D * weight)); // direction
-                Color specular = l.getSpecular().mult(objMin.getSpecularColor())
-                        .mult(Math.pow(Math.max(halfwayDir.dotProduct(v), 0.0d), objMin.getShininess())); 
+                Color specular = l.getSpecular()
+                        .mult(Math.pow(Math.max(halfwayDir.dotProduct(v), 0.0d), objMin.getShininess())).mult(objMin.colorSpecular); 
                   
                   
                 color = color.add(diffuse).add(specular);
-                
-                if (objMin.getReflectionCoeff() > 0.0D) {
-                    Vec3d r = v.sub(n.mult(2.0D * n.dotProduct(v))); // r = v - 2 * nIDotV * nI
-                    r.normalize(); // r / ||r||
-                    color = color.add(findColor(I, r,nbRay - 1).mult(objMin.getReflectionCoeff()));
-                }
-
-                if (objMin.getTransmissionCoeff() > 0.0D) {
-                    double eta = inside ? objMin.getRefractionIndex() : 1.0D / objMin.getRefractionIndex();
-                    double c1 = -n.dotProduct(v); // c1 = nI . v
-                    double c2 = Math.sqrt(1.0D - eta * eta * (1.0D - c1 * c1)); // c2 = sqrt(1 - eta^2 * (1 - c1^2))
-                    Vec3d t = v.mult(eta).add(n.mult(eta * c1 - c2)); // t = eta * v + (eta * c1 - c2) * nI
-                    t.normalize(); // t / ||t||
-                    color = color.add(findColor(I, t, nbRay - 1).mult(objMin.getTransmissionCoeff()));
-                }
             }
+        }
+        if (objMin.getReflectionCoeff() > 0.0D) {
+            Vec3d r = v.sub(n.mult(2.0D * n.dotProduct(v))); // r = v - 2 * nIDotV * nI
+            r.normalize(); // r / ||r||
+            color = color.add(findColor(I, r,nbRec - 1).mult(objMin.getReflectionCoeff()));
+        }
+
+        if (objMin.getTransmissionCoeff() > 0.0D) {
+            double eta = inside ? objMin.getRefractionIndex() : 1.0D / objMin.getRefractionIndex();
+            double c1 = -n.dotProduct(v); // c1 = nI . v
+            double c2 = Math.sqrt(1.0D - eta * eta * (1.0D - c1 * c1)); // c2 = sqrt(1 - eta^2 * (1 - c1^2))
+            Vec3d t = v.mult(eta).add(n.mult(eta * c1 - c2)); // t = eta * v + (eta * c1 - c2) * nI
+            t.normalize(); // t / ||t||
+            color = color.add(findColor(I, t, nbRec - 1).mult(objMin.getTransmissionCoeff()));
         }
         
         return color;
