@@ -26,8 +26,7 @@ public class Plan extends InterfaceRay{
     }
     
     @Override
-    public double getIntersection(Vec3d p, Vec3d v) { 
-        
+    public double getIntersection(Vec3d p, Vec3d v) {        
         double div = normal.dotProduct(v);
         if(div != 0.0d){
             double lambda = -(normal.dotProduct(p) + dist) /div;
@@ -35,12 +34,16 @@ public class Plan extends InterfaceRay{
                 return lambda;
         }
         return -1;
-
     }
 
     @Override
     public Vec3d getNormal(Vec3d I) {
         return new Vec3d(normal.x, normal.y, normal.z);
+    }
+
+    @Override
+    public Color getColor(Vec3d I) {
+        return color;
     }
         
 }

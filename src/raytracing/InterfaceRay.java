@@ -28,9 +28,7 @@ public abstract class InterfaceRay {
         return P.add(v.mult(lambdaI));
     }
     
-    public Color getColor(Vec3d I) {
-        return color;
-    }
+    public abstract Color getColor(Vec3d I);
 
     public Color getSpecularColor() {
         return colorSpecular;

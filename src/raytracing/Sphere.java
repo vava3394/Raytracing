@@ -59,5 +59,10 @@ public class Sphere extends InterfaceRay{
 
         return CI;
     }
+
+    @Override
+    public Color getColor(Vec3d I) {
+        return color;
+    }
     
 }

@@ -56,9 +56,6 @@ public class JavaTga
 
         fout.close();
     }
-
-    
-    
     
     /**
      * @param args no command line arguments
@@ -66,18 +63,14 @@ public class JavaTga
     public static void main(String[] args) {
         int nbRec = 1;
         
-        if(args.length>=1){
+        if(args.length == 2){
+            nbRec = Integer.parseInt(args[1]);
             scene = new Scene(Integer.parseInt(args[0]));
         }else{
-            System.err.println("manque des arguments");
+            System.err.println("error arguments\n" + "java raytracing.JavaTga <number scene> <number of recurrent>");;
             return;
         }
         
-        if(args.length >= 2){
-            nbRec = Integer.parseInt(args[1]);
-        }
-        
-
         
         
         
@@ -87,9 +80,8 @@ public class JavaTga
         
         for(int row = 0; row < h; row++){ // for each row of the image
             for(int col = 0; col < w; col++){ // for each column of the image
-      
-                double x = (col - w / 2.0D) / h;
-                double y = (row - h / 2.0D) / h;
+                double x = (col - w / 2.0d) / h;
+                double y = (row - h / 2.0d) / h;
                 double z = -0.8;
                 
                 Color color = findColor(new Vec3d(0,0,0),new Vec3d(x,y,z),nbRec);
@@ -112,35 +104,42 @@ public class JavaTga
     }
     
     public static Color findColor(Vec3d p,Vec3d v,int nbRec){
-        if (nbRec <= 0)
-            return Color.AMBIENT_LIGHT;
         
+        //si le nombre de recurence est 0 cela signifie qu'on lance plus de rayon
+        if (nbRec <= 0)
+            return scene.ambiantLight;
+        
+        //on cherche le plus proche objet
         double lambdaMin = Double.MAX_VALUE;
         InterfaceRay objMin = null;
 
+        //par rapport à tous les objets de la scene
         for(InterfaceRay f : scene.objs){
-            double lambda = f.getIntersection(p, v);
+            double lambdaObj = f.getIntersection(p, v);
 
-            if(lambda>0.0d && lambda < lambdaMin){
-                lambdaMin = lambda;
+            if(lambdaObj>0.0d && lambdaObj < lambdaMin){
+                lambdaMin = lambdaObj;
                 objMin = f;
             }
         }
         
+        //si aucun objet trouvé
         if(objMin==null)
-            return Color.AMBIENT_LIGHT;
+            return scene.ambiantLight;
 
         
         //I = p + lambda * v
         Vec3d I = objMin.getIntersectionPoint(p, v, lambdaMin);
         Vec3d n = objMin.getNormal(I);
         
-        boolean inside = n.dotProduct(v) > 0.0D;
+        Color color = objMin.getColor(I).mult(scene.ambiantLight);
+        
+        //si on est dans l'objet
+        boolean inside = n.dotProduct(v) > 0.0d;
         if (inside)
             n = n.mult(-1);
-        
-        Color color = objMin.getColor(I).mult(Color.AMBIENT_LIGHT);
 
+        //une fois l'objet trouvé, on verifie pour tous les source lumineuses, si entre l'objet et la source, il n'y a aucun obstacle
         for(Light l : scene.lights){
             Vec3d IS = l.getPosition().sub(I);
             
@@ -148,8 +147,7 @@ public class JavaTga
             
             for(InterfaceRay f : scene.objs){
                 double lambdaObj = f.getIntersection(I, IS);
-                if(0.0D < lambdaObj && lambdaObj < 1.0D){
-                    //System.out.println("NON LIGHT");
+                if(0.0d < lambdaObj && lambdaObj < 1.0d){
                     vis = false;
                 }
             }
@@ -161,32 +159,33 @@ public class JavaTga
                 double weight = Math.max(n.dotProduct(IS), 0.0f);
 
                 Color diffuse = l.getDiffuse().mult(objMin.color).mult(weight);
-
-                //Vec3d halfwayDir = IS.sub(n); // direction
                 
-                Vec3d halfwayDir = IS.sub(n.mult(2.0D * weight)); // direction
+                Vec3d halfwayDir = IS.sub(n.mult(2.0d * weight));
                 Color specular = l.getSpecular()
-                        .mult(Math.pow(Math.max(halfwayDir.dotProduct(v), 0.0d), objMin.getShininess())).mult(objMin.colorSpecular); 
-                  
-                  
-                color = color.add(diffuse).add(specular);
-            }
-        }
-        if (objMin.getReflectionCoeff() > 0.0D) {
-            Vec3d r = v.sub(n.mult(2.0D * n.dotProduct(v))); // r = v - 2 * nIDotV * nI
-            r.normalize(); // r / ||r||
-            color = color.add(findColor(I, r,nbRec - 1).mult(objMin.getReflectionCoeff()));
-        }
+                        .mult(Math.pow(Math.max(halfwayDir.dotProduct(v), 0.0d), objMin.getShininess())).mult(objMin.colorSpecular);          
 
-        if (objMin.getTransmissionCoeff() > 0.0D) {
-            double eta = inside ? objMin.getRefractionIndex() : 1.0D / objMin.getRefractionIndex();
-            double c1 = -n.dotProduct(v); // c1 = nI . v
-            double c2 = Math.sqrt(1.0D - eta * eta * (1.0D - c1 * c1)); // c2 = sqrt(1 - eta^2 * (1 - c1^2))
-            Vec3d t = v.mult(eta).add(n.mult(eta * c1 - c2)); // t = eta * v + (eta * c1 - c2) * nI
-            t.normalize(); // t / ||t||
-            color = color.add(findColor(I, t, nbRec - 1).mult(objMin.getTransmissionCoeff()));
+                color = color.add(diffuse).add(specular);
+                
+                
+                if (objMin.getReflectionCoeff() > 0.0d) {
+                    Vec3d r = v.sub(n.mult(2.0d * n.dotProduct(v)));
+                    r.normalize();
+
+                    color = color.mult(1-objMin.getReflectionCoeff()).add(findColor(I, r,nbRec - 1).mult(objMin.getReflectionCoeff()));
+                }
+
+                if (objMin.getTransmissionCoeff() > 0.0d) {
+                    double eta = inside ? objMin.getRefractionIndex() : 1.0d / objMin.getRefractionIndex();
+                    double c1 = -n.dotProduct(v);
+                    double c2 = Math.sqrt(1.0d - eta * eta * (1.0d - c1 * c1));// c2 = sqrt(1 - eta^2 * (1 - c1^2))
+                    
+                    Vec3d t = v.mult(eta).add(n.mult(eta * c1 - c2));// t = eta * v + (eta * c1 - c2) * nI
+                    t.normalize();
+
+                    color = color.add(findColor(I, t, nbRec - 1).mult(objMin.getTransmissionCoeff()));
+                }
+            }      
         }
-        
         return color;
     }
 

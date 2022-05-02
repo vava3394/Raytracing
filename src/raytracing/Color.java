@@ -20,13 +20,13 @@ public class Color {
     public static final Color YELLOW = new Color(1.0f, 1.0f, 0.0f);
     public static final Color CYAN = new Color(0.0f, 1.0f, 1.0f);
     public static final Color MAGENTA = new Color(1.0f, 0.0f, 1.0f);
-    public static final Color GRAY = new Color(0.5f, 0.5f, 0.5f);
+    public static final Color GRAY = new Color(0.2f, 0.2f, 0.2f);
     public static final Color DARK_GRAY = new Color(0.25f, 0.25f, 0.25f);
     public static final Color LIGHT_GRAY = new Color(0.75f, 0.75f, 0.75f);
     public static final Color LIGHT_RED = new Color(1.0f, 0.5f, 0.5f);
     public static final Color LIGHT_GREEN = new Color(0.5f, 1.0f, 0.5f);
     public static final Color LIGHT_BLUE = new Color(0.5f, 0.5f, 1.0f);
-    public static final Color AMBIENT_LIGHT = new Color(0.1f, 0.1f, 0.1f);
+    public static final Color AMBIENT_LIGHT = new Color(0f, 0f, 0f);
 
     private float r;
     private float g;
@@ -37,6 +37,18 @@ public class Color {
         this.r = r;
         this.g = g;
         this.b = b;
+    }
+    
+    public float getR() {
+        return (this.r);
+    }
+    
+    public float getG() {
+        return (this.g);
+    }
+    
+    public float getB() {
+        return (this.b);
     }
     
     public float getRed() {
@@ -52,14 +64,23 @@ public class Color {
     }
     
     public Color add(Color c) {
-        return new Color(Math.min(this.r + c.r, 1.0f), Math.min(this.g + c.g, 1.0f), Math.min(this.b + c.b, 1.0f));
+        return new Color(this.r + c.r, this.g + c.g, this.b + c.b).normalize();
     }
     
     public Color mult(Color c) {
-        return new Color(this.r * c.r, this.g * c.g, this.b * c.b);
+        return new Color(this.r * c.r, this.g * c.g, this.b * c.b).normalize();
     }
     
     public Color mult(double s) {
-        return new Color(this.r * (float) s, this.g * (float) s, this.b * (float) s);
+        return new Color(this.r * (float) s, this.g * (float) s, this.b * (float) s).normalize();
+    }
+
+
+    public Color normalize()
+    {
+        this.r = Math.max(Math.min(this.r, 1.0f),0.0f);
+        this.g = Math.max(Math.min(this.g, 1.0f),0.0f);
+        this.b = Math.max(Math.min(this.b, 1.0f),0.0f);
+        return this;
     }
 }
